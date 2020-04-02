@@ -1,7 +1,7 @@
 # michelmelo/dpd-track-trace
 #### DPD Tracking (Portugal post office) tracking for PHP.
 
-track mail and packages using CTT service (Portuguese post office)
+track mail and packages using DPD service (Portuguese post office)
 https://dpd.pt/track-and-trace
 
 ## Requirements
