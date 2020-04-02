@@ -7,27 +7,7 @@ use Goutte\Client;
 
 class DpdTracking
 {
-    public $refsPerRequest   = 25; // maximum number of references per request. max allowed by Dpd is 25
-    public $waitAfterRequest = 0; // seconds
-
-    const STATUS_PENDING          = 1;
-    const STATUS_IN_TRANSIT       = 2;
-    const STATUS_DELIVERY_PENDING = 3;
-    const STATUS_DELIVERED        = 4;
-    const STATUS_RETURNED         = 5;
-    const STATUS_UNKNOWN_OBJ      = 6;
-
-    private $baseUrl        = 'https://dpd.pt/track-and-trace';
-    private $possibleStatus = [
-        'Objeto aceite'                   => self::STATUS_PENDING,
-        'Objeto expedido'                 => self::STATUS_IN_TRANSIT,
-        'Objeto em distribuição'          => self::STATUS_IN_TRANSIT,
-        'Disponível para Levantamento'    => self::STATUS_DELIVERY_PENDING,
-        'Objeto com tentativa de entrega' => self::STATUS_DELIVERY_PENDING,
-        'Objeto entregue'                 => self::STATUS_DELIVERED,
-        'Objeto devolvido'                => self::STATUS_RETURNED,
-        'Objeto não encontrado'           => self::STATUS_UNKNOWN_OBJ,
-    ];
+    private $baseUrl = 'https://dpd.pt/track-and-trace';
 
     /**
      * @param array $refs
@@ -38,22 +18,8 @@ class DpdTracking
         $returnArr   = [];
         $requestRefs = '';
 
-        $j = 1;
         foreach ($refs as $idx => $ref) {
-            $requestRefs .= ($j++ > 1 ? ',' : '') . $ref;
-
-            if ($j == $this->refsPerRequest) {
-                $returnArr += $this->makeRequest($requestRefs);
-                if ((int) $this->waitAfterRequest > 0) {
-                    sleep($this->waitAfterRequest);
-                }
-                $requestRefs = '';
-                $j           = 1;
-            }
-        }
-
-        if ($requestRefs != "") {
-            $returnArr += $this->makeRequest($requestRefs);
+            $returnArr[$ref] = $this->makeRequest($ref);
         }
 
         return $returnArr;
@@ -77,27 +43,23 @@ class DpdTracking
      */
     private function makeRequest($requestRefs)
     {
-        $returnArr = [];
-        $client    = new Client();
-        $res       = $client->request('POST', $this->baseUrl, [
+        $return = [];
+
+        $client = new Client();
+        $client->setServerParameter('HTTP_USER_AGENT', 'DpdTracking/1.0; https://michelmelo.pt');
+
+        $res = $client->request('POST', $this->baseUrl . '?reference=' . $requestRefs, [
             'showResults' => true,
             'reference'   => $requestRefs,
         ]);
 
-        $res->filterXPath('//*[@class="table-responsive"]/table/tr')->each(function ($node, $i) use (&$returnArr) {
-            $resultText = trim($node->text());
-            if (strpos($resultText, '[+]Info') !== false) {
-
-                foreach ($this->possibleStatus as $statusText => $status) {
-                    if (strpos($resultText, $statusText) !== false) {
-                        $objRef                   = trim(substr($resultText, 0, strpos($resultText, ' ') - 1));
-                        $returnArr[trim($objRef)] = ['status' => $status, 'statusText' => $statusText];
-                    }
-                }
-            }
+        $return = $res->filter('table > tbody')->filter('tr')->each(function ($tr, $i) {
+            return $tr->filter('td')->each(function ($td, $i) {
+                return trim($td->text());
+            });
         });
 
-        return $returnArr;
+        return $return;
     }
 
 }
