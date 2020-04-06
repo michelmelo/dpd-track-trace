@@ -9,43 +9,59 @@ https://dpd.pt/track-and-trace
 PHP 5.6 or higher.
 
 ## Installation
+Add this to your composer.json file, in the require object:
 
-Include michelmelo/dpd-track-trace in your project, by adding it to your composer.json file.
-```php
-{
-    "require": {
-        "michelmelo/dpd-track-trace": "1.*"
-    }
-}
+```javascript
+"michelmelo/dpd-track-trace": "1.0.*"
 ```
+After that, run composer install to install the package.
+Add the service provider to `config/app.php`, within the `providers` array.
+
+```php
+'providers' => array(
+    // ...
+    michelmelo\dpdtracking\DpdTrackingServiceProvider::class,
+)
+```
+Publish the config file.
+```
+php artisan vendor:publish
+```
+
 
 
 ## Usage
 
 ```php
-$dpd = new \MichelMelo\Dpd\DpdTracking();
-$res = $dpd->trackObjects(['ED123456789PT', 'LX123456789PT']);
+
+use michelmelo\dpdtracking\DpdTracking;
+
+$dpd = new DpdTracking();
+$res = $dpd->trackObjects(['09711514666666V', 'LX123456789PT']);
 var_dump($res);
 ```
 
 ```php
 /*
 output:
-Array
-(
-    [ED123456789PT] => Array
-        (
-            [status] => 6
-            [statusText] => Objeto não encontrado
-        )
-
-    [LX123456789PT] => Array
-        (
-            [status] => 4
-            [statusText] => Objeto entregue
-        )
-
-)
+array:1 [
+  "09711514666666V" => array:11 [
+    0 => array:5 [
+      0 => "410"
+      1 => "2020/04/06 09:32"
+      2 => "Envio em armazém"
+      3 => ""
+      4 => ""
+    ]
+    1 => array:5 [
+      0 => "403"
+      1 => "2020/04/04 18:27"
+      2 => "Retorno armazém (pára AEP)"
+      3 => ""
+      4 => ""
+    ]
+  ]
+]
 */
 ```
 

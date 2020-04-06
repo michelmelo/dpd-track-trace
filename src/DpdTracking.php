@@ -1,6 +1,6 @@
 <?php
 
-namespace MichelMelo\Dpd;
+namespace michelmelo\dpdtracking;
 
 use Exception;
 use Goutte\Client;
